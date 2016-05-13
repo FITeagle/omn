@@ -2,6 +2,7 @@ package info.openmultinet.ontology.translators.geni;
 
 import info.openmultinet.ontology.Parser;
 import info.openmultinet.ontology.exceptions.InvalidModelException;
+import info.openmultinet.ontology.exceptions.InvalidRspecValueException;
 import info.openmultinet.ontology.exceptions.MissingRspecElementException;
 import info.openmultinet.ontology.translators.AbstractConverter;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
@@ -12,6 +13,7 @@ import java.io.InputStream;
 import javax.xml.bind.JAXBException;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.hp.hpl.jena.rdf.model.InfModel;
@@ -23,7 +25,8 @@ public class ManifestConverterTest {
 
 	@Test
 	public void testConvertingComplexRSpecToGraph() throws JAXBException,
-			InvalidModelException, MissingRspecElementException {
+			InvalidModelException, MissingRspecElementException,
+			InvalidRspecValueException {
 		final InputStream rspec = ManifestConverterTest.class
 				.getResourceAsStream("/geni/manifest/exogeni5nodemanifest.xml");
 		final Model model = ManifestConverter.getModel(rspec);
@@ -39,7 +42,8 @@ public class ManifestConverterTest {
 
 	@Test
 	public void testRoundtripWithRequest() throws JAXBException, IOException,
-			InvalidModelException, MissingRspecElementException {
+			InvalidModelException, MissingRspecElementException,
+			InvalidRspecValueException {
 		final String filename = "/geni/request/request_bound.xml";
 		final InputStream inputRspec = ManifestConverterTest.class
 				.getResourceAsStream(filename);
@@ -68,6 +72,8 @@ public class ManifestConverterTest {
 	}
 
 	@Test
+	@Ignore
+	//todo: takes too long
 	public void testConvertingGraph2RSpec() throws JAXBException,
 			InvalidModelException {
 		InputStream input = ManifestConverterTest.class
@@ -83,9 +89,12 @@ public class ManifestConverterTest {
 	}
 
 	@Test
-	//fixme: this test is slow!
+	@Ignore
+	//todo: takes too long
+	// fixme: this test is slow!
 	public void testPaper2015Roundtrip() throws JAXBException, IOException,
-			InvalidModelException, MissingRspecElementException {
+			InvalidModelException, MissingRspecElementException,
+			InvalidRspecValueException {
 		final String filename = "/geni/manifest/manifest_paper2015.xml";
 		final InputStream inputRspec = ManifestConverterTest.class
 				.getResourceAsStream(filename);

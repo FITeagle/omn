@@ -3,16 +3,20 @@ package info.openmultinet.ontology.translators.geni.request;
 import info.openmultinet.ontology.exceptions.MissingRspecElementException;
 import info.openmultinet.ontology.translators.AbstractConverter;
 import info.openmultinet.ontology.translators.geni.CommonMethods;
-import info.openmultinet.ontology.translators.geni.RSpecValidation;
-import info.openmultinet.ontology.translators.geni.advertisement.AdExtractExt;
 import info.openmultinet.ontology.translators.geni.jaxb.request.AccessNetwork;
+import info.openmultinet.ontology.translators.geni.jaxb.request.Bt;
 import info.openmultinet.ontology.translators.geni.jaxb.request.ComponentManager;
+import info.openmultinet.ontology.translators.geni.jaxb.request.Control;
 import info.openmultinet.ontology.translators.geni.jaxb.request.Device;
 import info.openmultinet.ontology.translators.geni.jaxb.request.DiskImageContents;
+import info.openmultinet.ontology.translators.geni.jaxb.request.Dns;
+import info.openmultinet.ontology.translators.geni.jaxb.request.Enodeb;
 import info.openmultinet.ontology.translators.geni.jaxb.request.Epc;
 import info.openmultinet.ontology.translators.geni.jaxb.request.ExecuteServiceContents;
 import info.openmultinet.ontology.translators.geni.jaxb.request.Fd;
+import info.openmultinet.ontology.translators.geni.jaxb.request.Gateway;
 import info.openmultinet.ontology.translators.geni.jaxb.request.HardwareTypeContents;
+import info.openmultinet.ontology.translators.geni.jaxb.request.Hss;
 import info.openmultinet.ontology.translators.geni.jaxb.request.InstallServiceContents;
 import info.openmultinet.ontology.translators.geni.jaxb.request.InterfaceContents;
 import info.openmultinet.ontology.translators.geni.jaxb.request.InterfaceRefContents;
@@ -27,8 +31,10 @@ import info.openmultinet.ontology.translators.geni.jaxb.request.LoginServiceCont
 import info.openmultinet.ontology.translators.geni.jaxb.request.Monitoring;
 import info.openmultinet.ontology.translators.geni.jaxb.request.NodeContents;
 import info.openmultinet.ontology.translators.geni.jaxb.request.Osco;
+import info.openmultinet.ontology.translators.geni.jaxb.request.Position3D;
 import info.openmultinet.ontology.translators.geni.jaxb.request.RoutableControlIp;
 import info.openmultinet.ontology.translators.geni.jaxb.request.ServiceContents;
+import info.openmultinet.ontology.translators.geni.jaxb.request.Switch;
 import info.openmultinet.ontology.translators.geni.jaxb.request.Ue;
 import info.openmultinet.ontology.vocabulary.Geo;
 import info.openmultinet.ontology.vocabulary.Geonames;
@@ -38,6 +44,7 @@ import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import info.openmultinet.ontology.vocabulary.Omn_resource;
 import info.openmultinet.ontology.vocabulary.Omn_service;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.util.List;
@@ -251,8 +258,7 @@ public class RequestExtract extends AbstractConverter {
 		Resource linkPropertyResource = linkResource.getModel().createResource(
 				uuid);
 		linkPropertyResource.addProperty(RDF.type, Omn_resource.LinkProperty);
-		
-		
+
 		// linkPropertyResource.addProperty(Omn_resource.hasSink, destID);
 		Resource destIdResource = null;
 		if (AbstractConverter.isUrl(destID) || AbstractConverter.isUrn(destID)) {
@@ -262,15 +268,17 @@ public class RequestExtract extends AbstractConverter {
 					HOST + destID);
 		}
 		linkPropertyResource.addProperty(Omn_resource.hasSink, destIdResource);
-		
+
 		Resource sourceIDResource = null;
-		if (AbstractConverter.isUrl(destID) || AbstractConverter.isUrn(sourceID)) {
+		if (AbstractConverter.isUrl(destID)
+				|| AbstractConverter.isUrn(sourceID)) {
 			sourceIDResource = linkResource.getModel().createResource(sourceID);
 		} else {
 			sourceIDResource = linkResource.getModel().createResource(
 					HOST + sourceID);
 		}
-		linkPropertyResource.addProperty(Omn_resource.hasSource, sourceIDResource);
+		linkPropertyResource.addProperty(Omn_resource.hasSource,
+				sourceIDResource);
 
 		String capacity = content.getCapacity();
 		if (capacity != null) {
@@ -313,15 +321,21 @@ public class RequestExtract extends AbstractConverter {
 
 		final NodeContents node = (NodeContents) jaxbElement.getValue();
 		final Model model = topology.getModel();
-		final Resource omnResource = model
-				.createResource(AbstractConverter.NAMESPACE
-						+ node.getClientId());
 
-		// client_id is required
+		Resource omnResource = null;
 		String clientId = node.getClientId();
 		if (clientId == null) {
 			throw new MissingRspecElementException("NodeContents > client_id");
 		}
+
+		if (AbstractConverter.isUrl(clientId)
+				|| AbstractConverter.isUrn(clientId)) {
+			omnResource = model.createResource(clientId);
+		} else {
+			omnResource = model.createResource(AbstractConverter.NAMESPACE
+					+ node.getClientId());
+		}
+
 		omnResource.addProperty(RDFS.label, clientId);
 		omnResource.addProperty(RDF.type, Omn_resource.Node);
 		extractNodeDetails(omnResource, node);
@@ -343,6 +357,20 @@ public class RequestExtract extends AbstractConverter {
 					RequestExtractExt.tryExtractUe(omnResource, o);
 				} else if (o.getClass().equals(Epc.class)) {
 					RequestExtractExt.tryExtractEpc(omnResource, o);
+				} else if (o.getClass().equals(Control.class)) {
+					RequestExtractExt.tryExtractFivegControl(omnResource, o);
+				} else if (o.getClass().equals(Enodeb.class)) {
+					RequestExtractExt.tryExtractFivegEnodeb(omnResource, o);
+				} else if (o.getClass().equals(Bt.class)) {
+					RequestExtractExt.tryExtractFivegBt(omnResource, o);
+				} else if (o.getClass().equals(Hss.class)) {
+					RequestExtractExt.tryExtractFivegHss(omnResource, o);
+				} else if (o.getClass().equals(Switch.class)) {
+					RequestExtractExt.tryExtractFivegSwitch(omnResource, o);
+				} else if (o.getClass().equals(Gateway.class)) {
+					RequestExtractExt.tryExtractFivegGateway(omnResource, o);
+				} else if (o.getClass().equals(Dns.class)) {
+					RequestExtractExt.tryExtractFivegDns(omnResource, o);
 				} else if (o.getClass().equals(AccessNetwork.class)) {
 					RequestExtractExt.tryExtractAccessNetwork(omnResource, o);
 				} else if (o.getClass().equals(Device.class)) {
@@ -385,7 +413,8 @@ public class RequestExtract extends AbstractConverter {
 			Resource interfaceResource;
 			if (AbstractConverter.isUrl(clientId)
 					|| AbstractConverter.isUrn(clientId)) {
-				interfaceResource = outputModel.createResource(content.getClientId());
+				interfaceResource = outputModel.createResource(content
+						.getClientId());
 			} else {
 				interfaceResource = outputModel.createResource(HOST
 						+ content.getClientId());
@@ -578,6 +607,21 @@ public class RequestExtract extends AbstractConverter {
 						} else if (key.getLocalPart().equals("name")) {
 							locationResource.addProperty(RDFS.label, value);
 						}
+					}
+				}
+				
+				List<Object> locationSubElements = location.getAny();
+				for (Object object : locationSubElements) {
+					if (object instanceof Position3D) {
+
+						Position3D position3d = (Position3D) object;
+						BigDecimal x = position3d.getX();
+						BigDecimal y = position3d.getY();
+						BigDecimal z = position3d.getZ();
+
+						locationResource.addLiteral(Omn_resource.x, x);
+						locationResource.addLiteral(Omn_resource.y, y);
+						locationResource.addLiteral(Omn_resource.z, z);
 					}
 				}
 				omnNode.addProperty(Omn_resource.hasLocation, locationResource);

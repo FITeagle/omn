@@ -18,6 +18,7 @@ import info.openmultinet.ontology.translators.geni.jaxb.advertisement.NodeConten
 import info.openmultinet.ontology.translators.geni.jaxb.advertisement.NodeContents.SliverType;
 import info.openmultinet.ontology.translators.geni.jaxb.advertisement.NodeContents.SliverType.DiskImage;
 import info.openmultinet.ontology.translators.geni.jaxb.advertisement.Pc;
+import info.openmultinet.ontology.translators.geni.jaxb.advertisement.Position3D;
 import info.openmultinet.ontology.vocabulary.Geo;
 import info.openmultinet.ontology.vocabulary.Geonames;
 import info.openmultinet.ontology.vocabulary.Omn;
@@ -25,6 +26,7 @@ import info.openmultinet.ontology.vocabulary.Omn_domain_pc;
 import info.openmultinet.ontology.vocabulary.Omn_lifecycle;
 import info.openmultinet.ontology.vocabulary.Omn_resource;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.util.List;
@@ -86,12 +88,12 @@ public class AdExtract extends AbstractConverter {
 				URI uri = URI.create(content.getComponentId());
 				interfaceResource.addLiteral(Omn_lifecycle.hasComponentID, uri);
 			}
-			
+
 			if (content.getComponentName() != null) {
 				String componentName = content.getComponentName();
-				interfaceResource.addLiteral(Omn_lifecycle.hasComponentName, componentName);
+				interfaceResource.addLiteral(Omn_lifecycle.hasComponentName,
+						componentName);
 			}
-
 
 			if (content.getRole() != null) {
 				interfaceResource.addProperty(Omn_lifecycle.hasRole,
@@ -313,6 +315,7 @@ public class AdExtract extends AbstractConverter {
 
 			for (Object rspecNodeObject : rspecNode
 					.getAnyOrRelationOrLocation()) {
+
 				tryExtractCloud(rspecNodeObject, omnNode);
 				tryExtractHardwareType(rspecNodeObject, omnNode);
 				tryExtractSliverType(rspecNodeObject, omnNode);
@@ -326,9 +329,9 @@ public class AdExtract extends AbstractConverter {
 						omnNode);
 				AdExtractExt.tryExtractAccessNetwork(omnNode, rspecNodeObject);
 				AdExtractExt.tryExtractUe(omnNode, rspecNodeObject);
+				AdExtractExt.tryExtractGateway(omnNode, rspecNodeObject);
 				AdExtractExt.tryExtractEpc(omnNode, rspecNodeObject);
 				AdExtractExt.tryExtractAcs(omnNode, rspecNodeObject);
-
 			}
 
 			topology.addProperty(Omn.hasResource, omnNode);
@@ -408,6 +411,22 @@ public class AdExtract extends AbstractConverter {
 						}
 					}
 				}
+
+				List<Object> locationSubElements = location.getAny();
+				for (Object object : locationSubElements) {
+					if (object instanceof Position3D) {
+
+						Position3D position3d = (Position3D) object;
+						BigDecimal x = position3d.getX();
+						BigDecimal y = position3d.getY();
+						BigDecimal z = position3d.getZ();
+
+						locationResource.addLiteral(Omn_resource.x, x);
+						locationResource.addLiteral(Omn_resource.y, y);
+						locationResource.addLiteral(Omn_resource.z, z);
+					}
+				}
+
 				omnNode.addProperty(Omn_resource.hasLocation, locationResource);
 			}
 		} catch (final ClassCastException e) {
